@@ -16,20 +16,23 @@ export const createJob = async (req, res) => {
 //==================================================
 export const getAllJobs = async (req, res) => {
     try {
-        const { location, category, type , search , page , limit } = req.query;
+        const { location, companyName, type , search , page , limit } = req.query;
         const queryObject = {};
 
         if (location) {
             queryObject.location = location;
         }
-        if (category) {
-            queryObject.category = category;
+        if (companyName) {
+            queryObject.category = companyName;
         }
         if (type) {
             queryObject.type = type;
         }
         if (search) {
-            queryObject.title = { $regex: search, $options: 'i' };
+            queryObject.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { company: { $regex: search, $options: "i" } },
+            ];
         }
 
         let query = Job.find(queryObject);

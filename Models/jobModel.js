@@ -5,11 +5,11 @@ const jobSchema = new mongoose.Schema({
         type : String,
         required :true
     },
-    description:{
-        type : String,
-        required :true
+    companyName: {
+      type: String,
+      required: true,
     },
-    category:{
+    description:{
         type : String,
         required :true
     },
@@ -24,11 +24,6 @@ const jobSchema = new mongoose.Schema({
         type: String,
         enum:['Full-time', 'Part-time', 'Remote', 'Freelance'],
         required: true
-    },
-    status:{
-        type: String,
-        enum:['Open', 'Closed'],
-        default: 'Open'
     },
     employer:{
         type:mongoose.Schema.Types.ObjectId,
