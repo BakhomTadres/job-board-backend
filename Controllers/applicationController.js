@@ -1,4 +1,5 @@
 import applicationModel from "../Models/applicationModel.js";
+import jobModel from "../Models/jobModel.js";
 
 //! CRUD Operations
 export const applyForJob = async (req,res) =>{
@@ -21,24 +22,38 @@ try{
 }
 };
 
-export const getMyApplications = async (req,res) => {
-    try{
-        const applications = await applicationModel.find();
+export const getMyApplications = async (req, res) => {
+    try {
+        const userId = req.params.id || req.user?._id;
+
+        const applications = await applicationModel.find({ userId: userId });
         res.status(200).json({
-            message : "Applications showed",
-            data : applications,
+            message: "Applications showed",
+            data: applications,
         });
-}catch(err){
-    res.status(500).json({
-        message :err.message
-    });
-}
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
 };
 
 export const getJobApplications = async (req,res) => {
     try{
+        const jobId = req.params.jobId || req.params.id;
+        const job = await jobModel.findOne({
+            _id : jobId,
+            postedBy:req.user._id
+        });
+
+        if (!job){
+            return res.status(403).json({
+                message : "You are not allowed to view these applications"
+            });
+        }
+
         const applications = await applicationModel.find({
-            jobId : req.params.id
+            jobId : jobId
         });
         res.status(200).json({
             message : "Job Applications showed",
@@ -80,9 +95,3 @@ try{
 }
 };
 
-// import { 
-//   applyForJob, 
-//   getMyApplications, 
-//   getJobApplications, 
-//   updateApplicationStatus 
-// } from "../Controllers/applicationController.js";
