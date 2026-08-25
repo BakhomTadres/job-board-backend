@@ -1,4 +1,5 @@
 import applicationModel from "../Models/applicationModel.js";
+import jobModel from "../Models/jobModel.js";
 
 //! CRUD Operations
 export const applyForJob = async (req,res) =>{
@@ -39,8 +40,20 @@ export const getMyApplications = async (req, res) => {
 
 export const getJobApplications = async (req,res) => {
     try{
+        const jobId = req.params.jobId || req.params.id;
+        const job = await jobModel.findOne({
+            _id : jobId,
+            postedBy:req.user._id
+        });
+
+        if (!job){
+            return res.status(403).json({
+                message : "You are not allowed to view these applications"
+            });
+        }
+
         const applications = await applicationModel.find({
-            jobId : req.params.id
+            jobId : jobId
         });
         res.status(200).json({
             message : "Job Applications showed",
@@ -82,9 +95,3 @@ try{
 }
 };
 
-// import { 
-//   applyForJob, 
-//   getMyApplications, 
-//   getJobApplications, 
-//   updateApplicationStatus 
-// } from "../Controllers/applicationController.js";
