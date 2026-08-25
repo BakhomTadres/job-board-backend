@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import userRouter from "./Routes/userRoute.js";
 import applicationRoutes from "./Routes/applicationRoute.js";
+import jobRouter from "./Routes/jobRoute.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ mongoose.connect(MONGO_URI)
 
 app.use("/api/users", userRouter);
 app.use("/api", applicationRoutes);
+app.use("/api/jobs", jobRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
