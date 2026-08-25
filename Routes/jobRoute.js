@@ -4,7 +4,7 @@ import { authenticateUser } from "../Middlewares/auth.js";
 const jobRouter = Router();
 
 jobRouter.post("/", authenticateUser, createJob);
-jobRouter.get("/", authenticateUser,getAllJobs);
+jobRouter.get("/",getAllJobs);
 
 
 export default jobRouter;
