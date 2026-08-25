@@ -1,0 +1,152 @@
+[
+  {
+    "title": "Backend Node.js Developer",
+    "description": "We are looking for a strong Node.js developer to build scalable APIs and manage database architecture.",
+    "category": "Software Engineering",
+    "location": "Cairo, Egypt",
+    "salary": 15000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Frontend Angular Developer",
+    "description": "Seeking an experienced Angular developer to create responsive and interactive user interfaces.",
+    "category": "Software Engineering",
+    "location": "Alexandria, Egypt",
+    "salary": 12000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "MEAN Stack Developer",
+    "description": "Looking for a full-stack developer proficient in MongoDB, Express, Angular, and Node.js.",
+    "category": "Software Engineering",
+    "location": "Remote",
+    "salary": 20000,
+    "type": "Remote",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "UI/UX Designer",
+    "description": "Design user-friendly interfaces for our upcoming job board platform.",
+    "category": "Design",
+    "location": "Giza, Egypt",
+    "salary": 10000,
+    "type": "Part-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Junior Graphic Designer",
+    "description": "Create engaging social media posts and marketing materials.",
+    "category": "Design",
+    "location": "Remote",
+    "salary": 5000,
+    "type": "Freelance",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Data Analyst",
+    "description": "Analyze user behavior and provide insights to improve business strategies.",
+    "category": "Data Science",
+    "location": "Cairo, Egypt",
+    "salary": 18000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "DevOps Engineer",
+    "description": "Manage CI/CD pipelines using GitHub Actions and AWS.",
+    "category": "IT & Infrastructure",
+    "location": "Remote",
+    "salary": 25000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Social Media Manager",
+    "description": "Manage daily posts and interact with followers on various social media platforms.",
+    "category": "Marketing",
+    "location": "Cairo, Egypt",
+    "salary": 8000,
+    "type": "Part-time",
+    "status": "Closed",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "React Native Developer",
+    "description": "Build cross-platform mobile applications using React Native.",
+    "category": "Software Engineering",
+    "location": "Remote",
+    "salary": 22000,
+    "type": "Remote",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "IT Support Specialist",
+    "description": "Provide hardware and software support to internal employees.",
+    "category": "IT & Infrastructure",
+    "location": "Alexandria, Egypt",
+    "salary": 7000,
+    "type": "Full-time",
+    "status": "Closed",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "SEO Specialist",
+    "description": "Optimize website content to rank higher on Google search results.",
+    "category": "Marketing",
+    "location": "Remote",
+    "salary": 9000,
+    "type": "Freelance",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Quality Assurance (QA) Tester",
+    "description": "Write and execute test cases for our new software releases.",
+    "category": "Software Engineering",
+    "location": "Giza, Egypt",
+    "salary": 11000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Content Writer",
+    "description": "Write technical blogs and articles about programming and tech trends.",
+    "category": "Content Creation",
+    "location": "Remote",
+    "salary": 6000,
+    "type": "Part-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "System Administrator",
+    "description": "Maintain and monitor company servers and network health.",
+    "category": "IT & Infrastructure",
+    "location": "Cairo, Egypt",
+    "salary": 14000,
+    "type": "Full-time",
+    "status": "Closed",
+    "employer": "REPLACE_WITH_USER_ID"
+  },
+  {
+    "title": "Product Manager",
+    "description": "Lead the product lifecycle and manage the development team's roadmap.",
+    "category": "Management",
+    "location": "Cairo, Egypt",
+    "salary": 30000,
+    "type": "Full-time",
+    "status": "Open",
+    "employer": "REPLACE_WITH_USER_ID"
+  }
+]
