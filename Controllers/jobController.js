@@ -3,8 +3,10 @@ import Job from "../Models/jobModel.js";
 //==================================================
 export const createJob = async (req, res) => {
     try {
-        const newJob = await Job.create(req.body);
-        
+        const newJob = await Job.create({
+            ...req.body,
+            employer: req.user._id 
+        });        
         return res.status(201).json({
             message: "Job has been created successfully",
             data: newJob

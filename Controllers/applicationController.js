@@ -43,7 +43,7 @@ export const getJobApplications = async (req,res) => {
         const jobId = req.params.jobId || req.params.id;
         const job = await jobModel.findOne({
             _id : jobId,
-            postedBy:req.user._id
+            employer: req.user._id
         });
 
         if (!job){
