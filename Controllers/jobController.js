@@ -23,7 +23,7 @@ export const getAllJobs = async (req, res) => {
             queryObject.location = location;
         }
         if (companyName) {
-            queryObject.category = companyName;
+            queryObject.companyName = companyName;
         }
         if (type) {
             queryObject.type = type;
@@ -31,7 +31,7 @@ export const getAllJobs = async (req, res) => {
         if (search) {
             queryObject.$or = [
                 { title: { $regex: search, $options: "i" } },
-                { company: { $regex: search, $options: "i" } },
+                { companyName: { $regex: search, $options: "i" } },
             ];
         }
 
