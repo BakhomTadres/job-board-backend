@@ -57,3 +57,76 @@ export const getAllJobs = async (req, res) => {
 
 }
 //==================================================
+const getjobbyid=async(req,res)=>
+{
+    try {
+const job=await 
+Job.findById(req.params.id);
+if(!job)
+{
+    return res.status(404).json({
+        message:"job not found"
+    });
+}
+res.status(200).json(job);
+    }
+    catch(error){
+        res.status(500).json({
+            message: error.message
+        });
+    } 
+};
+const updatejob=async(req,res)=>
+{
+    try
+    {
+        const job= await
+        Job.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {new:true}
+        );
+        if(!job)
+        {
+            return res.status(404).json({
+               message:"job not found" 
+            });
+        }
+res.status(200).json(job);
+    }
+     catch(error){
+        res.status(500).json({
+            message: error.message
+  
+        });
+    }
+};
+const deletejob =async(req,res)=>
+{
+    try{
+    const job=await
+    Job.findByIdAndDelete
+       ( req.params.id );
+    if(!job)
+    {
+        return
+         res.status(404).json({
+           message:"job not found" 
+        })
+    }
+    res.status(200).json({
+        message:"successfuly"
+    });
+}
+catch(error){
+    res.status(500).json({
+        message:error.message
+    });
+}
+};
+module.exports=
+{
+     getjobbyid,
+    updatejob,
+    deletejob
+};
