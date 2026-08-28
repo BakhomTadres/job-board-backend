@@ -144,7 +144,11 @@ export const updateProfile = async (req, res) => {
     }
     const { name, newEmail, password, passwordConfirm } = req.body;
     if (name) user.name = name;
-    if (newEmail) user.email = newEmail;
+    if (newEmail) {
+      user.email = newEmail;
+      const newToken = jwt.sign({ email: newEmail }, process.env.JWT_SECRET);
+      user.token = newToken;
+    }
     if (password) {
       if (password !== passwordConfirm) {
         return res.status(400).json({
@@ -159,6 +163,7 @@ export const updateProfile = async (req, res) => {
     res.status(200).json({
       status: "success",
       user,
+      token: user.token
     });
   } catch (err) {
     res.status(400).json({
