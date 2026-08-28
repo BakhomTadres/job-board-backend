@@ -57,7 +57,7 @@ export const getAllJobs = async (req, res) => {
 
 }
 //==================================================
-const getjobbyid=async(req,res)=>
+export const getJobById=async(req,res)=>
 {
     try {
 const job=await 
@@ -76,7 +76,8 @@ res.status(200).json(job);
         });
     } 
 };
-const updatejob=async(req,res)=>
+//==================================================
+export const updateJob=async(req,res)=>
 {
     try
     {
@@ -101,7 +102,8 @@ res.status(200).json(job);
         });
     }
 };
-const deletejob =async(req,res)=>
+//==================================================
+export const deleteJob =async(req,res)=>
 {
     try{
     const job=await
@@ -124,9 +126,4 @@ catch(error){
     });
 }
 };
-module.exports=
-{
-     getjobbyid,
-    updatejob,
-    deletejob
-};
+//==================================================

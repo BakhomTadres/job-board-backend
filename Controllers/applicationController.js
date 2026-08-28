@@ -6,7 +6,8 @@ export const applyForJob = async (req,res) =>{
 try{
     const newApplication = {
         ...req.body,
-        jobId : req.params.id 
+        jobId : req.params.id,
+        userId: req.user._id
     };
     const application = await applicationModel
     .create (newApplication);
@@ -24,7 +25,7 @@ try{
 
 export const getMyApplications = async (req, res) => {
     try {
-        const userId = req.params.id || req.user?._id;
+        const userId = req.user._id;
 
         const applications = await applicationModel.find({ userId: userId });
         res.status(200).json({

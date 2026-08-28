@@ -22,11 +22,11 @@ const applicationSchema = new mongoose.Schema({
     },
     jobId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'job'
+        ref: 'Job'
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user' 
+        ref: 'User' 
     },
 });
 
