@@ -10,22 +10,14 @@ dotenv.config();
 
 const app = express();
 
-// Parse JSON request bodies while preserving raw body for Stripe webhook verification
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      if (req.originalUrl.includes("/webhook")) {
-        req.rawBody = buf;
-      }
-    },
-  })
-);
+// Parse JSON request bodies
+app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/job-board";
 
 mongoose.connect(MONGO_URI)
-.then(() => console.log("Connected to MongoDB"))
-.catch((err) => console.error("Error connecting to MongoDB:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Error connecting to MongoDB:", err));
 
 app.use("/api/users", userRouter);
 app.use("/api", applicationRoutes);
@@ -36,5 +28,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
