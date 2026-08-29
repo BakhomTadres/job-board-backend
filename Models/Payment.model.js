@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 /**
  * Payment Schema for MongoDB using Mongoose
- * Tracks transaction details, Stripe PaymentIntent IDs, and payment status lifecycle.
+ * Tracks transaction details, Paymob Intention IDs, Unified Checkout sessions,
+ * and payment status lifecycle.
  */
 const paymentSchema = new mongoose.Schema(
   {
@@ -12,12 +13,33 @@ const paymentSchema = new mongoose.Schema(
       required: [true, "User ID is required"],
       index: true,
     },
-    stripePaymentIntentId: {
+    paymobIntentionId: {
       type: String,
-      required: [true, "Stripe PaymentIntent ID is required"],
-      unique: true,
       trim: true,
       index: true,
+    },
+    paymobOrderId: {
+      type: mongoose.Schema.Types.Mixed,
+      index: true,
+    },
+    paymobTransactionId: {
+      type: mongoose.Schema.Types.Mixed,
+      index: true,
+    },
+    specialReference: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    clientSecret: {
+      type: String,
+      trim: true,
+    },
+    checkoutUrl: {
+      type: String,
+      trim: true,
     },
     amount: {
       type: Number,
@@ -26,7 +48,7 @@ const paymentSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      default: "usd",
+      default: "egp",
       lowercase: true,
       trim: true,
     },
@@ -42,6 +64,20 @@ const paymentSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       trim: true,
+    },
+    billingData: {
+      first_name: String,
+      last_name: String,
+      phone_number: String,
+      email: String,
+      street: String,
+      building: String,
+      floor: String,
+      apartment: String,
+      city: String,
+      state: String,
+      country: String,
+      postal_code: String,
     },
   },
   {

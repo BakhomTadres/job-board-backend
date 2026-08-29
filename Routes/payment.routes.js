@@ -1,7 +1,8 @@
 import express from "express";
 import {
   createCheckout,
-  stripeWebhook,
+  paymobWebhook,
+  getPaymentById,
 } from "../Controllers/payment.controller.js";
 import { authenticateUser } from "../Middlewares/auth.js";
 
@@ -9,22 +10,23 @@ const router = express.Router();
 
 /**
  * @route   POST /api/payments/create-checkout
- * @desc    Create a Stripe PaymentIntent and MongoDB payment record
+ * @desc    Create a Paymob Payment Intention, Unified Checkout session, and MongoDB payment record
  * @access  Protected (Requires valid JWT Bearer token)
  */
 router.post("/create-checkout", authenticateUser, createCheckout);
 
 /**
  * @route   POST /api/payments/webhook
- * @desc    Handle incoming Stripe webhook events (verification + database status update)
- * @access  Public (Signature verified via stripe-signature header)
- * @note    Uses express.raw({ type: 'application/json' }) middleware specifically on this route
- *          to preserve raw request body buffer required for Stripe cryptographic signature verification.
+ * @desc    Handle incoming Paymob Transaction Processed webhook callbacks
+ * @access  Public (Authenticity verified cryptographically via HMAC-SHA512 query param)
  */
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
+router.post("/webhook", paymobWebhook);
+
+/**
+ * @route   GET /api/payments/:id
+ * @desc    Get payment status and details by payment ID
+ * @access  Protected (Requires valid JWT Bearer token)
+ */
+router.get("/:id", authenticateUser, getPaymentById);
 
 export default router;
