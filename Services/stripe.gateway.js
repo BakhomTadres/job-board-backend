@@ -4,10 +4,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Initialize Stripe SDK instance with secret key from environment variables
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-12-18.acacia", // Modern Stripe API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_dummy", {
+  apiVersion: "2024-12-18.acacia",
 });
-
 /**
  * Creates a new Stripe PaymentIntent.
  * 
