@@ -1,7 +1,7 @@
 import Job from "../Models/jobModel.js";
 import Application from "../Models/applicationModel.js";
 
-//==================================================
+
 export const createJob = async (req, res) => {
     try {
         const newJob = await Job.create({
@@ -16,7 +16,7 @@ export const createJob = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 };
-//==================================================
+
 export const getAllJobs = async (req, res) => {
     try {
         const { location, companyName, type , search , page , limit } = req.query;
@@ -57,7 +57,7 @@ export const getAllJobs = async (req, res) => {
 
 
 };
-//==================================================
+
 export const getJobById=async(req,res)=>
 {
     try {
@@ -77,7 +77,7 @@ res.status(200).json(job);
         });
     } 
 };
-//==================================================
+
 export const updateJob=async(req,res)=>
 {
     try
@@ -103,7 +103,7 @@ res.status(200).json(job);
         });
     }
 };
-//==================================================
+
 export const deleteJob =async(req,res)=>
 {
     try{
@@ -127,40 +127,29 @@ catch(error){
     });
 }
 };
-//==================================================
 export const getRecommendedJobs = async (req, res) => {
-    try{
-        // const userId = req.user._id;
-        // const userApplications = await Application.find({ userId: userId });
-        // const appliedJobIds =  userApplications.map(app => app.jobId);
-        // const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } })
-        // let userInterests = appliedJobs.flatMap(job => job.skills);
-        // userInterests = [...new Set(userInterests)];
-        // const recommendedJobs = await Job.find({skills: { $in: userInterests }, _id: { $nin: appliedJobIds }});
-        const userId = req.user._id || req.user.id; 
-        console.log("1. User ID:", userId);
+  try {
+    const userId = req.user._id || req.user.id;
+    const userApplications = await Application.find({ userId: userId });
+    
+    const appliedJobIds = userApplications.map(app => app.jobId);
+    const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } });
+    
+    let userInterests = appliedJobs.flatMap(job => job.skills);
+    userInterests = [...new Set(userInterests)];
+    
+    const recommendedJobs = await Job.find({ skills: { $in: userInterests }, _id: { $nin: appliedJobIds } });
 
-        const userApplications = await Application.find({ userId: userId });
-        console.log("2. Applications Found:", userApplications.length);
+    res.status(200).json({
+      status: "success",
+      results: recommendedJobs.length,
+      data: { jobs: recommendedJobs }
+    });
 
-        const appliedJobIds = userApplications.map(app => app.jobId);
-        const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } });
-
-        let userInterests = appliedJobs.flatMap(job => job.skills);
-        userInterests = [...new Set(userInterests)];
-        console.log("3. User Interests (Skills):", userInterests);
-
-        const recommendedJobs = await Job.find({ skills: { $in: userInterests }, _id: { $nin: appliedJobIds } });
-        res.status(200).json({
-             status: "success",
-             results: recommendedJobs.length,
-             data: { jobs: recommendedJobs }
-         });
-
-    } catch (err) {
-        res.status(500).json({
-        status: "error",
-        message: err.message
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message
     });
   }
 };
