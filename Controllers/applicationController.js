@@ -1,33 +1,52 @@
 import applicationModel from "../Models/applicationModel.js";
 import jobModel from "../Models/jobModel.js";
+import userModel from "../Models/userModel.js";
+import { calculateMatchScore } from "../Services/matchScore.service.js";
 
-//! CRUD Operations
-export const applyForJob = async (req,res) =>{
-try{
-    const newApplication = {
-        ...req.body,
-        jobId : req.params.id,
-        userId: req.user._id
-    };
-    const application = await applicationModel
-    .create (newApplication);
-    
-    res.status(201).json({
-        message :"Application created",
-         data : application
-        });    
-}catch(err){
-    res.status(500).json({
-        message :err.message
-    });
-}
+
+export const applyForJob = async (req, res) => {
+    try {
+        const jobId = req.params.id;
+        const userId = req.user._id;
+
+        const job = await jobModel.findById(jobId);
+        const user = await userModel.findById(userId);
+
+        if (!job) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const matchScore = calculateMatchScore(user.skills, job.skills);
+
+        const newApplication = {
+            ...req.body,
+            jobId: jobId,
+            userId: userId,
+            matchScore: matchScore
+        };
+
+        const application = await applicationModel.create(newApplication);
+
+        res.status(201).json({
+            message: "Application created",
+            data: application
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
 };
 
 export const getMyApplications = async (req, res) => {
     try {
         const userId = req.user._id;
-
         const applications = await applicationModel.find({ userId: userId });
+       
         res.status(200).json({
             message: "Applications showed",
             data: applications,
@@ -53,9 +72,11 @@ export const getJobApplications = async (req,res) => {
             });
         }
 
-        const applications = await applicationModel.find({
-            jobId : jobId
-        });
+        const applications = await applicationModel
+        .find({ jobId : jobId })
+        .populate ("userId","name email skills")
+        .sort({matchScore : -1});
+
         res.status(200).json({
             message : "Job Applications showed",
             data : applications,

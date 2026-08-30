@@ -28,6 +28,12 @@ const applicationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User' 
     },
+    matchScore : {
+        type : Number,
+        min : 0 ,
+        max : 100,
+        default : 0
+    }
 });
 
 const applicationModel = mongoose.model("Application", applicationSchema);

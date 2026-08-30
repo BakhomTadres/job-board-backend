@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["job seeker","employer","admin"],
     default: "job seeker"
+  },
+  skills: {
+    type : [String],
+    default : []
   }
 });
 

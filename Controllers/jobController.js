@@ -1,6 +1,6 @@
 import Job from "../Models/jobModel.js";
 
-//==================================================
+
 export const createJob = async (req, res) => {
     try {
         const newJob = await Job.create({
@@ -15,7 +15,7 @@ export const createJob = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 };
-//==================================================
+
 export const getAllJobs = async (req, res) => {
     try {
         const { location, companyName, type , search , page , limit } = req.query;
@@ -55,8 +55,8 @@ export const getAllJobs = async (req, res) => {
     }
 
 
-}
-//==================================================
+};
+
 export const getJobById=async(req,res)=>
 {
     try {
@@ -76,7 +76,7 @@ res.status(200).json(job);
         });
     } 
 };
-//==================================================
+
 export const updateJob=async(req,res)=>
 {
     try
@@ -102,7 +102,7 @@ res.status(200).json(job);
         });
     }
 };
-//==================================================
+
 export const deleteJob =async(req,res)=>
 {
     try{
@@ -126,4 +126,4 @@ catch(error){
     });
 }
 };
-//==================================================
+
