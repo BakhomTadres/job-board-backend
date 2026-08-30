@@ -2,9 +2,10 @@ import User from "../Models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key";
+
 export const registerUser = async (req, res) => {
   const { name, email, password, passwordConfirm, role } = req.body;
-
   try {
     if (password !== passwordConfirm) {
       return res.status(400).json({
@@ -27,8 +28,7 @@ export const registerUser = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const token = jwt.sign({ email }, process.env.JWT_SECRET);
-
+    const token = jwt.sign({ email }, JWT_SECRET);
     const user = await User.create({
       name,
       email,
@@ -36,9 +36,9 @@ export const registerUser = async (req, res) => {
       role,
       token,
     });
-
     res.status(201).json({
       status: "success",
+      token: user.token,
       user,
     });
   } catch (err) {
@@ -51,17 +51,14 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(400).json({
         status: "fail",
         message: "Invalid email or password",
       });
     }
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
@@ -69,8 +66,7 @@ export const loginUser = async (req, res) => {
         message: "Invalid email or password",
       });
     }
-
-    const token = jwt.sign({ email }, process.env.JWT_SECRET);
+    const token = jwt.sign({ email }, JWT_SECRET);
     user.token = token;
     await user.save();
     
@@ -142,11 +138,11 @@ export const updateProfile = async (req, res) => {
         message: "User not found",
       });
     }
-    const { name, newEmail, password, passwordConfirm } = req.body;
+    const { name, newEmail, password, passwordConfirm, skills } = req.body;
     if (name) user.name = name;
     if (newEmail) {
       user.email = newEmail;
-      const newToken = jwt.sign({ email: newEmail }, process.env.JWT_SECRET);
+      const newToken = jwt.sign({ email: newEmail }, JWT_SECRET);
       user.token = newToken;
     }
     if (password) {
@@ -158,6 +154,15 @@ export const updateProfile = async (req, res) => {
       }
       const hashedPassword = await bcrypt.hash(password, 12);
       user.password = hashedPassword;
+    }
+    if (skills) {
+      if (!Array.isArray(skills)){
+        return res.status(400).json({
+          status: "fail",
+          message: "Skills must be an array of strings",
+        });
+      }
+      user.skills = skills;
     }
     await user.save();
     res.status(200).json({
