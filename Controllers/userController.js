@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key";
-
+//============================================
 export const registerUser = async (req, res) => {
-  const { name, email, password, passwordConfirm, role } = req.body;
+  const { name, email, password, passwordConfirm, role, skills } = req.body; 
   try {
     if (password !== passwordConfirm) {
       return res.status(400).json({
@@ -35,6 +35,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       role,
       token,
+      skills, 
     });
     res.status(201).json({
       status: "success",
@@ -48,7 +49,7 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-
+//============================================
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {

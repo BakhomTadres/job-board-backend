@@ -1,4 +1,5 @@
 import Job from "../Models/jobModel.js";
+import Application from "../Models/applicationModel.js";
 
 
 export const createJob = async (req, res) => {
@@ -126,4 +127,29 @@ catch(error){
     });
 }
 };
+export const getRecommendedJobs = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const userApplications = await Application.find({ userId: userId });
+    
+    const appliedJobIds = userApplications.map(app => app.jobId);
+    const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } });
+    
+    let userInterests = appliedJobs.flatMap(job => job.skills);
+    userInterests = [...new Set(userInterests)];
+    
+    const recommendedJobs = await Job.find({ skills: { $in: userInterests }, _id: { $nin: appliedJobIds } });
 
+    res.status(200).json({
+      status: "success",
+      results: recommendedJobs.length,
+      data: { jobs: recommendedJobs }
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message
+    });
+  }
+};
