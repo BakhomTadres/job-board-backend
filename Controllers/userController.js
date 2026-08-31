@@ -28,15 +28,19 @@ export const registerUser = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const token = jwt.sign({ email }, JWT_SECRET);
+    
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role,
-      token,
       skills, 
     });
+
+    const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+    user.token = token;
+    await user.save();
+
     res.status(201).json({
       status: "success",
       token: user.token,
@@ -67,7 +71,7 @@ export const loginUser = async (req, res) => {
         message: "Invalid email or password",
       });
     }
-    const token = jwt.sign({ email }, JWT_SECRET);
+    const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
     user.token = token;
     await user.save();
     

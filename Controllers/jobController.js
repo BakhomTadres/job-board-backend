@@ -82,19 +82,25 @@ export const updateJob=async(req,res)=>
 {
     try
     {
-        const job= await
-        Job.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {new:true}
-        );
+        const job = await Job.findById(req.params.id);
         if(!job)
         {
             return res.status(404).json({
                message:"job not found" 
             });
         }
-res.status(200).json(job);
+
+        // التأكد أن صاحب العمل هو نفسه صاحب الوظيفة
+        if (job.employer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+            return res.status(403).json({ message: "You are not allowed to modify this job" });
+        }
+
+        const updatedJob = await Job.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {new:true}
+        );
+        res.status(200).json(updatedJob);
     }
      catch(error){
         res.status(500).json({
@@ -107,16 +113,20 @@ res.status(200).json(job);
 export const deleteJob =async(req,res)=>
 {
     try{
-    const job=await
-    Job.findByIdAndDelete
-       ( req.params.id );
+    const job = await Job.findById(req.params.id);
     if(!job)
     {
-        return
-         res.status(404).json({
+        return res.status(404).json({
            message:"job not found" 
-        })
+        });
     }
+
+    // التأكد أن صاحب العمل هو نفسه صاحب الوظيفة
+    if (job.employer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+        return res.status(403).json({ message: "You are not allowed to modify this job" });
+    }
+
+    await Job.findByIdAndDelete(req.params.id);
     res.status(200).json({
         message:"successfuly"
     });
