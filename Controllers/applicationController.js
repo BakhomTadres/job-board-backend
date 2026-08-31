@@ -20,6 +20,12 @@ export const applyForJob = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        // منع التقديم مرتين على نفس الوظيفة
+        const existingApp = await applicationModel.findOne({ jobId, userId });
+        if (existingApp) {
+            return res.status(400).json({ message: "You already applied to this job" });
+        }
+
         const matchScore = calculateMatchScore(user.skills, job.skills);
 
         const newApplication = {
