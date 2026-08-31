@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cors from "cors";
 import userRouter from "./Routes/userRoute.js";
 import applicationRoutes from "./Routes/applicationRoute.js";
 import jobRouter from "./Routes/jobRoute.js";
@@ -9,6 +10,9 @@ import paymentRouter from "./Routes/payment.routes.js";
 dotenv.config();
 
 const app = express();
+
+// Enable CORS for frontend integration (Angular, etc.)
+app.use(cors());
 
 // Parse JSON request bodies
 app.use(express.json());
