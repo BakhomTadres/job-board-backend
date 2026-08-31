@@ -58,34 +58,49 @@ export const getMyApplications = async (req, res) => {
     }
 };
 
-export const getJobApplications = async (req,res) => {
-    try{
+export const getJobApplications = async (req, res) => {
+    try {
         const jobId = req.params.jobId || req.params.id;
-        const job = await jobModel.findOne({
-            _id : jobId,
-            employer: req.user._id
-        });
 
-        if (!job){
+        const job = await jobModel.findById(jobId);
+
+        if (!job) {
+            return res.status(404).json({
+                message: "Job not found"
+            });
+        }
+
+        // Employer → only his own jobs
+        if (req.user.role === "employer") {
+            if (job.employer.toString() !== req.user._id.toString()) {
+                return res.status(403).json({
+                    message: "You are not allowed to view these applications"
+                });
+            }
+        }
+
+        // Admin → allowed for all jobs
+        else if (req.user.role !== "admin") {
             return res.status(403).json({
-                message : "You are not allowed to view these applications"
+                message: "You are not allowed to view these applications"
             });
         }
 
         const applications = await applicationModel
-        .find({ jobId : jobId })
-        .populate ("userId","name email skills")
-        .sort({matchScore : -1});
+            .find({ jobId })
+            .populate("userId", "name email skills")
+            .sort({ matchScore: -1 });
 
-        res.status(200).json({
-            message : "Job Applications showed",
-            data : applications,
+        return res.status(200).json({
+            message: "Job applications showed",
+            data: applications
         });
-}catch(err){
-    res.status(500).json({
-        message :err.message
-    });
-}
+
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        });
+    }
 };
 
 export const updateApplicationStatus = async (req,res) => {
