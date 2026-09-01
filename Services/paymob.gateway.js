@@ -44,6 +44,17 @@ export const PAYMOB_TEST_CARDS = [
     otp3DS: "111111",
     scenario: "Alternative Test Card / Approved Payment",
   },
+  {
+    type: "MasterCard",
+    cardNumber: "5123456789012346",
+    formattedNumber: "5123 4567 8901 2346",
+    expiryMonth: "01",
+    expiryYear: "29",
+    cvv: "123",
+    cardHolder: "Test Account",
+    otp3DS: "123456",
+    scenario: "Frictionless / Auto-Approved 3DS",
+  },
 ];
 
 /**
@@ -51,13 +62,17 @@ export const PAYMOB_TEST_CARDS = [
  * @returns {boolean}
  */
 export const isTestMode = () => {
-  const envMode = (process.env.PAYMOB_MODE || process.env.PAYMOB_ENVIRONMENT || "").toLowerCase();
+  const envMode = (process.env.PAYMOB_MODE || process.env.PAYMOB_ENVIRONMENT || "sandbox").toLowerCase();
   const secretKey = (process.env.PAYMOB_SECRET_KEY || "").toLowerCase();
+  const nodeEnv = (process.env.NODE_ENV || "development").toLowerCase();
+
   return (
     envMode === "test" ||
     envMode === "sandbox" ||
     secretKey.includes("test") ||
-    secretKey.includes("placeholder")
+    secretKey.includes("placeholder") ||
+    !process.env.PAYMOB_SECRET_KEY ||
+    nodeEnv !== "production"
   );
 };
 
@@ -69,7 +84,11 @@ export const isTestMode = () => {
 export const isTestCard = (cardNumber) => {
   if (!cardNumber) return false;
   const sanitized = String(cardNumber).replace(/\s+/g, "");
-  return sanitized === "4000000000000002" || sanitized === "1111111111111111";
+  return (
+    sanitized === "4000000000000002" ||
+    sanitized === "1111111111111111" ||
+    sanitized === "5123456789012346"
+  );
 };
 
 /**
