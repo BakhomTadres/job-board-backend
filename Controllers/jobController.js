@@ -140,15 +140,34 @@ catch(error){
 export const getRecommendedJobs = async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
-    const userApplications = await Application.find({ userId: userId });
+    const limit = parseInt(req.query.limit) || 3; // 1. تحديد 3 وظائف فقط افتراضياً
+
+    // 2. جلب الـ jobId فقط بدون باقي الحقول وباستخدام .lean() لتسريع الأداء
+    const userApplications = await Application.find({ userId })
+      .select('jobId')
+      .lean();
     
     const appliedJobIds = userApplications.map(app => app.jobId);
-    const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } });
+
+    // 3. جلب حقل skills فقط للوظائف التي تم التقديم عليها
+    const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } })
+      .select('skills')
+      .lean();
     
-    let userInterests = appliedJobs.flatMap(job => job.skills);
-    userInterests = [...new Set(userInterests)];
-    
-    const recommendedJobs = await Job.find({ skills: { $in: userInterests }, _id: { $nin: appliedJobIds } });
+    // دمج مهارات الوظائف السابقة مع مهارات المستخدم المسجلة في حسابه (إن وُجدت)
+    let userInterests = [
+      ...(req.user.skills || []),
+      ...appliedJobs.flatMap(job => job.skills || [])
+    ];
+    userInterests = [...new Set(userInterests)]; // إزالة التكرار
+
+    // 4. جلب أفضل الوظائف بحد أقصى (Limit) وبدون إجهاد الداتابيز
+    const recommendedJobs = await Job.find({
+      skills: { $in: userInterests },
+      _id: { $nin: appliedJobIds }
+    })
+      .limit(limit) // <--- هذا السطر يوفر معظم وقت الاستعلام!
+      .lean();
 
     res.status(200).json({
       status: "success",
