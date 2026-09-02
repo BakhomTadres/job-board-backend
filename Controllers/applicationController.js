@@ -3,6 +3,19 @@ import jobModel from "../Models/jobModel.js";
 import userModel from "../Models/userModel.js";
 import { calculateMatchScore } from "../Services/matchScore.service.js";
 
+export const getAllApplications = async (req, res) => {
+    try {
+        const applications = await applicationModel.find();
+        res.status(200).json({
+            message: "All applications showed",
+            data: applications
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
 
 export const applyForJob = async (req, res) => {
     try {

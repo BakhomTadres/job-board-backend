@@ -3,11 +3,14 @@ import {
     applyForJob,
     getMyApplications,
     getJobApplications,
-    updateApplicationStatus
+    updateApplicationStatus,
+    getAllApplications
 } from "../Controllers/applicationController.js";
 import { authenticateUser, roleMiddleware } from "../Middlewares/auth.js"; // ضفنا الـ roleMiddleware
 
 const router = express.Router();
+
+router.get("/applications", authenticateUser, roleMiddleware("admin"), getAllApplications);
 
 router.post("/jobs/:id/apply", authenticateUser, roleMiddleware("job seeker"), applyForJob);
 

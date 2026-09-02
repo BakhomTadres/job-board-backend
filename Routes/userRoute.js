@@ -7,16 +7,17 @@ import {
   getUserById,
   logoutUser,
   checkJobPostingEligibility,
+  getAllUsers
 } from "../Controllers/userController.js";
-import { authenticateUser } from "../Middlewares/auth.js";
+import { authenticateUser, roleMiddleware } from "../Middlewares/auth.js";
 
 const userRouter = Router();
 
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.post("/logout", authenticateUser, logoutUser);
-
-// Place specific named routes BEFORE dynamic /:id route
+userRouter.get("/", authenticateUser, roleMiddleware("admin"), getAllUsers);
+// Place specific named routes BEFORE dynamic /:id route/
 userRouter.get("/job-posting-eligibility", authenticateUser, checkJobPostingEligibility);
 userRouter.get("/profile", authenticateUser, getProfile);
 userRouter.patch("/profile", authenticateUser, updateProfile);
