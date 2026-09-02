@@ -1,5 +1,7 @@
 import crypto from "crypto";
+import mongoose from "mongoose";
 import Payment from "../Models/Payment.model.js";
+import User from "../Models/userModel.js";
 import {
   createIntention,
   getUnifiedCheckoutUrl,
@@ -14,6 +16,86 @@ import {
   PAYMOB_BASE_URL,
   verifyHmac,
 } from "../Services/paymob.gateway.js";
+
+/**
+ * Helper function to activate plan benefits for a user upon confirmed payment success.
+ * - Single Job (starter / featured): adds +1 to user.jobCredits
+ * - Unlimited (unlimited): activates subscription for 30 days
+ * Guaranteed idempotent via payment.isProcessed flag.
+ */
+export const applyPaymentPlanToUser = async (payment) => {
+  try {
+    if (!payment || !payment.userId) return null;
+    if (payment.isProcessed) {
+      console.log(`Payment ${payment._id} has already been processed for user plan.`);
+      return await User.findById(payment.userId);
+    }
+
+    const user = await User.findById(payment.userId);
+    if (!user) {
+      console.warn(`User ${payment.userId} not found for payment ${payment._id}`);
+      return null;
+    }
+
+    const plan = String(payment.planId || "starter").toLowerCase();
+
+    if (plan === "weekly" || plan === "featured") {
+      // Weekly Subscription (7 days unlimited posting)
+      const now = Date.now();
+      const currentExpiry =
+        user.subscription?.expiresAt && user.subscription?.isActive
+          ? new Date(user.subscription.expiresAt).getTime()
+          : 0;
+      const baseDate = currentExpiry > now ? currentExpiry : now;
+      const newExpiresAt = new Date(baseDate + 7 * 24 * 60 * 60 * 1000);
+
+      user.subscription = {
+        plan: "weekly",
+        isActive: true,
+        expiresAt: newExpiresAt,
+      };
+    } else if (plan === "unlimited" || plan === "monthly") {
+      // Monthly Subscription (30 days unlimited posting)
+      const now = Date.now();
+      const currentExpiry =
+        user.subscription?.expiresAt && user.subscription?.isActive
+          ? new Date(user.subscription.expiresAt).getTime()
+          : 0;
+      const baseDate = currentExpiry > now ? currentExpiry : now;
+      const newExpiresAt = new Date(baseDate + 30 * 24 * 60 * 60 * 1000);
+
+      user.subscription = {
+        plan: "unlimited",
+        isActive: true,
+        expiresAt: newExpiresAt,
+      };
+    } else {
+      // Single job package (starter, single, etc.)
+      user.jobCredits = (user.jobCredits || 0) + 1;
+      if (!user.subscription) {
+        user.subscription = {
+          plan: plan,
+          isActive: false,
+        };
+      } else {
+        user.subscription.plan = plan;
+      }
+    }
+
+    await user.save();
+
+    payment.isProcessed = true;
+    await payment.save();
+
+    console.log(
+      `Activated plan '${plan}' for user ${user._id}. Current credits: ${user.jobCredits}, isSubscribed: ${user.subscription?.isActive}`
+    );
+    return user;
+  } catch (error) {
+    console.error(`Error in applyPaymentPlanToUser for payment ${payment?._id}:`, error);
+    throw error;
+  }
+};
 
 /**
  * Creates a Paymob checkout session configured for Sandbox / Testing or Live mode.
@@ -33,6 +115,7 @@ export const createCheckout = async (req, res) => {
       redirectionUrl,
       iframeId = process.env.PAYMOB_IFRAME_ID || PAYMOB_IFRAME_ID || "789123",
       integrationId = process.env.PAYMOB_INTEGRATION_ID || PAYMOB_INTEGRATION_ID || "456789",
+      planId = "starter",
     } = req.body;
 
     // 1. Validate request payload
@@ -100,6 +183,7 @@ export const createCheckout = async (req, res) => {
       redirectionUrl,
       extras: {
         userId: userId.toString(),
+        planId: String(planId || "starter"),
         specialReference,
         isTestMode: inTest,
       },
@@ -117,6 +201,8 @@ export const createCheckout = async (req, res) => {
     // 6. Create new Payment record in MongoDB with 'pending' status
     const newPayment = await Payment.create({
       userId,
+      planId: String(planId || "starter"),
+      isProcessed: false,
       paymobIntentionId: intentionId ? String(intentionId) : undefined,
       paymobOrderId: intentionOrderId,
       paymobToken: paymentToken,
@@ -142,6 +228,7 @@ export const createCheckout = async (req, res) => {
         : "Checkout session created successfully.",
       data: {
         paymentId: newPayment._id,
+        planId: newPayment.planId,
         intentionId: intentionId,
         clientSecret: clientSecret,
         checkoutUrl: checkoutUrl,
@@ -173,32 +260,26 @@ export const createCheckout = async (req, res) => {
 };
 
 /**
- * Returns public Paymob configuration for Frontend and Testing integrations.
- * Exposes sandbox mode flag, public keys, integration IDs, iframe IDs, and test card details.
+ * Returns public configuration for Paymob sandbox and testing.
  * 
  * @route GET /api/payments/config
  * @access Public
  */
-export const getPaymobConfig = async (req, res) => {
+export const getPaymobConfig = (req, res) => {
   try {
     const inTest = isTestMode();
-    const config = {
-      environment: process.env.PAYMOB_ENVIRONMENT || (inTest ? "sandbox" : "production"),
-      mode: process.env.PAYMOB_MODE || (inTest ? "test" : "live"),
-      isTestMode: inTest,
-      baseUrl: process.env.PAYMOB_BASE_URL || PAYMOB_BASE_URL,
-      publicKey: process.env.PAYMOB_PUBLIC_KEY || PAYMOB_PUBLIC_KEY || "egy_pk_test_placeholder_pub_key",
-      integrationId: process.env.PAYMOB_INTEGRATION_ID || PAYMOB_INTEGRATION_ID || "456789",
-      iframeId: process.env.PAYMOB_IFRAME_ID || PAYMOB_IFRAME_ID || "789123",
-      currency: process.env.PAYMOB_CURRENCY || PAYMOB_CURRENCY || "EGP",
-      testCards: PAYMOB_TEST_CARDS,
-      instructions:
-        "To test Paymob payments without live charges, use default test card 4000 0000 0000 0002 or 1111 1111 1111 1111 with any future expiry date (e.g. 12/28) and CVV 123.",
-    };
-
     return res.status(200).json({
       status: "success",
-      data: config,
+      data: {
+        mode: inTest ? "sandbox" : "live",
+        isTestMode: inTest,
+        publicKey: PAYMOB_PUBLIC_KEY || "egy_pk_test_placeholder",
+        integrationId: PAYMOB_INTEGRATION_ID || "456789",
+        iframeId: PAYMOB_IFRAME_ID || "789123",
+        currency: PAYMOB_CURRENCY || "EGP",
+        baseUrl: PAYMOB_BASE_URL,
+        testCards: inTest ? PAYMOB_TEST_CARDS : [],
+      },
     });
   } catch (error) {
     console.error("Error in getPaymobConfig controller:", error);
@@ -211,7 +292,6 @@ export const getPaymobConfig = async (req, res) => {
 
 /**
  * Processes a test payment directly with Paymob default test cards in Sandbox mode.
- * Allows simulating card transactions (4000 0000 0000 0002 / 1111 1111 1111 1111) safely.
  * 
  * @route POST /api/payments/test-pay
  * @access Protected (Requires JWT Authentication)
@@ -261,6 +341,11 @@ export const processTestCardPayment = async (req, res) => {
     payment.paymentMethod = cleanCard.startsWith("4") ? "Visa (Sandbox)" : "MasterCard (Sandbox)";
     await payment.save();
 
+    let updatedUser = null;
+    if (finalStatus === "succeeded") {
+      updatedUser = await applyPaymentPlanToUser(payment);
+    }
+
     return res.status(200).json({
       status: "success",
       message: `Test payment processed successfully in Sandbox mode. Status: ${finalStatus}`,
@@ -270,6 +355,9 @@ export const processTestCardPayment = async (req, res) => {
         status: payment.status,
         amount: payment.amount,
         currency: payment.currency,
+        planId: payment.planId,
+        jobCredits: updatedUser ? updatedUser.jobCredits : undefined,
+        subscription: updatedUser ? updatedUser.subscription : undefined,
         card: {
           maskedPan,
           cardHolder: cardHolder || "Test User",
@@ -290,8 +378,6 @@ export const processTestCardPayment = async (req, res) => {
 
 /**
  * Handles incoming Paymob webhook events (Transaction Processed Callbacks).
- * Verifies the HMAC-SHA512 signature from the query string using PAYMOB_HMAC_SECRET,
- * then updates the payment status in MongoDB.
  * 
  * @route POST /api/payments/webhook
  * @access Public (Protected by HMAC SHA-512 Signature Verification)
@@ -346,9 +432,7 @@ export const paymobWebhook = async (req, res) => {
       transactionObj.is_refunded === "true";
 
     let paymentStatus = "pending";
-    if (isVoided) {
-      paymentStatus = "canceled";
-    } else if (isRefunded) {
+    if (isVoided || isRefunded) {
       paymentStatus = "canceled";
     } else if (isSuccess && !isPending) {
       paymentStatus = "succeeded";
@@ -396,9 +480,12 @@ export const paymobWebhook = async (req, res) => {
       });
     } else {
       console.log(`Paymob payment ${updatedPayment._id} status updated to '${paymentStatus}'.`);
+
+      if (paymentStatus === "succeeded") {
+        await applyPaymentPlanToUser(updatedPayment);
+      }
     }
 
-    // 4. Acknowledge receipt to Paymob
     return res.status(200).json({
       status: "success",
       received: true,
@@ -413,7 +500,94 @@ export const paymobWebhook = async (req, res) => {
 };
 
 /**
- * Retrieves payment details by Payment ID.
+ * Confirms payment completion upon browser redirection from Paymob Unified Checkout.
+ * Ensures the payment is marked succeeded and user credits are applied immediately,
+ * even when webhook cannot reach localhost directly.
+ * 
+ * @route POST /api/payments/confirm-session
+ * @access Protected (Requires JWT Authentication)
+ */
+export const confirmPaymentSession = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const { paymentId, reference, transactionId, orderId, success } = req.body;
+
+    const queryOr = [];
+    if (paymentId && mongoose.Types.ObjectId.isValid(paymentId)) {
+      queryOr.push({ _id: paymentId });
+    }
+    if (reference) {
+      queryOr.push({ specialReference: reference });
+    }
+    if (orderId) {
+      queryOr.push({ paymobOrderId: orderId });
+    }
+    if (transactionId) {
+      queryOr.push({ paymobTransactionId: transactionId });
+    }
+
+    if (queryOr.length === 0) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Payment reference, paymentId, or transactionId is required.",
+      });
+    }
+
+    let payment = await Payment.findOne({ $or: queryOr });
+    if (!payment) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Payment record not found.",
+      });
+    }
+
+    if (payment.userId.toString() !== userId.toString() && req.user?.role !== "admin") {
+      return res.status(403).json({
+        status: "fail",
+        message: "Unauthorized to access this payment record.",
+      });
+    }
+
+    const isSuccess = success === true || success === "true" || success === undefined;
+
+    if (isSuccess && payment.status !== "failed" && payment.status !== "canceled") {
+      payment.status = "succeeded";
+      if (transactionId && !payment.paymobTransactionId) {
+        payment.paymobTransactionId = transactionId;
+      }
+      if (orderId && !payment.paymobOrderId) {
+        payment.paymobOrderId = orderId;
+      }
+      await payment.save();
+
+      const updatedUser = await applyPaymentPlanToUser(payment);
+
+      return res.status(200).json({
+        status: "success",
+        message: "Payment verified and employer credits updated successfully.",
+        data: payment,
+        user: {
+          jobCredits: updatedUser?.jobCredits,
+          subscription: updatedUser?.subscription,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      data: payment,
+    });
+  } catch (error) {
+    console.error("Error in confirmPaymentSession controller:", error);
+    return res.status(500).json({
+      status: "error",
+      message: error.message || "Failed to confirm payment session.",
+    });
+  }
+};
+
+/**
+ * Retrieves payment details by Payment ID or Reference.
  * 
  * @route GET /api/payments/:id
  * @access Protected (Requires JWT Authentication)
@@ -423,7 +597,20 @@ export const getPaymentById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?._id || req.user?.id;
 
-    const payment = await Payment.findById(id);
+    let payment = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      payment = await Payment.findById(id);
+    }
+    if (!payment) {
+      payment = await Payment.findOne({
+        $or: [
+          { specialReference: id },
+          { paymobTransactionId: id },
+          { paymobOrderId: id },
+        ],
+      });
+    }
+
     if (!payment) {
       return res.status(404).json({
         status: "fail",
@@ -453,9 +640,11 @@ export const getPaymentById = async (req, res) => {
 };
 
 export default {
+  applyPaymentPlanToUser,
   createCheckout,
   getPaymobConfig,
   processTestCardPayment,
   paymobWebhook,
+  confirmPaymentSession,
   getPaymentById,
 };

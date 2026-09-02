@@ -1,170 +1,192 @@
 import Job from "../Models/jobModel.js";
 import Application from "../Models/applicationModel.js";
-
+import User from "../Models/userModel.js";
 
 export const createJob = async (req, res) => {
-    try {
-        const newJob = await Job.create({
-            ...req.body,
-            employer: req.user._id 
-        });        
-        return res.status(201).json({
-            message: "Job has been created successfully",
-            data: newJob
-        });
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        message: "User not found",
+      });
     }
+
+    const isAdmin = user.role === "admin";
+    const isSubscribed = Boolean(
+      user.subscription?.isActive &&
+      user.subscription?.expiresAt &&
+      new Date(user.subscription.expiresAt).getTime() > Date.now()
+    );
+    const hasJobCredits = typeof user.jobCredits === "number" && user.jobCredits > 0;
+
+    // Admins are exempt from payment requirements.
+    // Employers must have either an active subscription or jobCredits > 0.
+    if (!isAdmin) {
+      if (!isSubscribed && !hasJobCredits) {
+        return res.status(402).json({
+          status: "fail",
+          message: "Payment required. You do not have active job credits.",
+          paymentRequired: true,
+        });
+      }
+    }
+
+    // 1. Create the job opening in MongoDB
+    const newJob = await Job.create({
+      ...req.body,
+      employer: user._id,
+    });
+
+    // 2. Deduct credit if relying on job credits (not unlimited subscription and not admin)
+    let remainingCredits = "unlimited";
+    if (!isAdmin) {
+      if (!isSubscribed) {
+        user.jobCredits = Math.max(0, (user.jobCredits || 0) - 1);
+        await user.save();
+        remainingCredits = user.jobCredits;
+      }
+    }
+
+    return res.status(201).json({
+      status: "success",
+      message: "Job has been created successfully",
+      data: newJob,
+      remainingCredits,
+    });
+  } catch (err) {
+    return res.status(500).json({ status: "error", message: err.message });
+  }
 };
 
 export const getAllJobs = async (req, res) => {
-    try {
-        const { location, companyName, type , search , page , limit } = req.query;
-        const queryObject = {};
+  try {
+    const { location, companyName, type, search, page, limit } = req.query;
+    const queryObject = {};
 
-        if (location) {
-            queryObject.location = location;
-        }
-        if (companyName) {
-            queryObject.companyName = companyName;
-        }
-        if (type) {
-            queryObject.type = type;
-        }
-        if (search) {
-            queryObject.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { companyName: { $regex: search, $options: "i" } },
-            ];
-        }
-
-        let query = Job.find(queryObject);
-        query = query.sort('-createdAt');
-
-        const pageNumber = Number(page) || 1; 
-        const limitNumber = Number(limit) || 10; 
-        const skip = (pageNumber - 1) * limitNumber; 
-        query = query.skip(skip).limit(limitNumber);
-
-         const jobs = await query;
-
-        return res.status(200).json({ results: jobs.length, data: jobs });        
-
-
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
+    if (location) {
+      queryObject.location = location;
+    }
+    if (companyName) {
+      queryObject.companyName = companyName;
+    }
+    if (type) {
+      queryObject.type = type;
+    }
+    if (search) {
+      queryObject.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { companyName: { $regex: search, $options: "i" } },
+      ];
     }
 
+    let query = Job.find(queryObject);
+    query = query.sort("-createdAt");
 
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+    query = query.skip(skip).limit(limitNumber);
+
+    const jobs = await query;
+
+    return res.status(200).json({ results: jobs.length, data: jobs });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
 
-export const getJobById=async(req,res)=>
-{
-    try {
-const job=await 
-Job.findById(req.params.id);
-if(!job)
-{
-    return res.status(404).json({
-        message:"job not found"
-    });
-}
-res.status(200).json(job);
-    }
-    catch(error){
-        res.status(500).json({
-            message: error.message
-        });
-    } 
-};
-
-export const updateJob=async(req,res)=>
-{
-    try
-    {
-        const job = await Job.findById(req.params.id);
-        if(!job)
-        {
-            return res.status(404).json({
-               message:"job not found" 
-            });
-        }
-
-        // التأكد أن صاحب العمل هو نفسه صاحب الوظيفة
-        if (job.employer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-            return res.status(403).json({ message: "You are not allowed to modify this job" });
-        }
-
-        const updatedJob = await Job.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {new:true}
-        );
-        res.status(200).json(updatedJob);
-    }
-     catch(error){
-        res.status(500).json({
-            message: error.message
-  
-        });
-    }
-};
-
-export const deleteJob =async(req,res)=>
-{
-    try{
+export const getJobById = async (req, res) => {
+  try {
     const job = await Job.findById(req.params.id);
-    if(!job)
-    {
-        return res.status(404).json({
-           message:"job not found" 
-        });
+    if (!job) {
+      return res.status(404).json({
+        message: "job not found",
+      });
+    }
+    res.status(200).json(job);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const updateJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({
+        message: "job not found",
+      });
     }
 
     // التأكد أن صاحب العمل هو نفسه صاحب الوظيفة
     if (job.employer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-        return res.status(403).json({ message: "You are not allowed to modify this job" });
+      return res.status(403).json({ message: "You are not allowed to modify this job" });
+    }
+
+    const updatedJob = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json(updatedJob);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const deleteJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({
+        message: "job not found",
+      });
+    }
+
+    // التأكد أن صاحب العمل هو نفسه صاحب الوظيفة
+    if (job.employer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "You are not allowed to modify this job" });
     }
 
     await Job.findByIdAndDelete(req.params.id);
     res.status(200).json({
-        message:"successfuly"
+      message: "successfuly",
     });
-}
-catch(error){
+  } catch (error) {
     res.status(500).json({
-        message:error.message
+      message: error.message,
     });
-}
+  }
 };
+
 export const getRecommendedJobs = async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
     const limit = parseInt(req.query.limit) || 3; // 1. تحديد 3 وظائف فقط افتراضياً
 
     // 2. جلب الـ jobId فقط بدون باقي الحقول وباستخدام .lean() لتسريع الأداء
-    const userApplications = await Application.find({ userId })
-      .select('jobId')
-      .lean();
-    
-    const appliedJobIds = userApplications.map(app => app.jobId);
+    const userApplications = await Application.find({ userId }).select("jobId").lean();
+
+    const appliedJobIds = userApplications.map((app) => app.jobId);
 
     // 3. جلب حقل skills فقط للوظائف التي تم التقديم عليها
     const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } })
-      .select('skills')
+      .select("skills")
       .lean();
-    
+
     // دمج مهارات الوظائف السابقة مع مهارات المستخدم المسجلة في حسابه (إن وُجدت)
     let userInterests = [
       ...(req.user.skills || []),
-      ...appliedJobs.flatMap(job => job.skills || [])
+      ...appliedJobs.flatMap((job) => job.skills || []),
     ];
     userInterests = [...new Set(userInterests)]; // إزالة التكرار
 
     // 4. جلب أفضل الوظائف بحد أقصى (Limit) وبدون إجهاد الداتابيز
     const recommendedJobs = await Job.find({
       skills: { $in: userInterests },
-      _id: { $nin: appliedJobIds }
+      _id: { $nin: appliedJobIds },
     })
       .limit(limit) // <--- هذا السطر يوفر معظم وقت الاستعلام!
       .lean();
@@ -172,13 +194,12 @@ export const getRecommendedJobs = async (req, res) => {
     res.status(200).json({
       status: "success",
       results: recommendedJobs.length,
-      data: { jobs: recommendedJobs }
+      data: { jobs: recommendedJobs },
     });
-
   } catch (err) {
     res.status(500).json({
       status: "error",
-      message: err.message
+      message: err.message,
     });
   }
 };
