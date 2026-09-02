@@ -23,6 +23,12 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+  app.get("/", (req, res) => {
+  res.json({
+    message: "Job Board API is running"
+  });
+});
+
 // Routes
 app.use("/api/users", userRouter);
 app.use("/api", applicationRoutes);
