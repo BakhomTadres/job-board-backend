@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://career-hub-website.vercel.app",
+    origin: ["https://career-hub-website.vercel.app","http://localhost:4200"],
   }),
 );
 
