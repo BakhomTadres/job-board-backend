@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 /**
  * Payment Schema for MongoDB using Mongoose
  * Tracks transaction details, Paymob Intention IDs, Unified Checkout sessions,
- * Iframe URLs, test mode indicators, and payment status lifecycle.
+ * Iframe URLs, test mode indicators, plan details, and payment status lifecycle.
  */
 const paymentSchema = new mongoose.Schema(
   {
@@ -11,6 +11,17 @@ const paymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: [true, "User ID is required"],
+      index: true,
+    },
+    planId: {
+      type: String,
+      trim: true,
+      default: "starter",
+      index: true,
+    },
+    isProcessed: {
+      type: Boolean,
+      default: false,
       index: true,
     },
     paymobIntentionId: {

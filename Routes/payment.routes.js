@@ -4,6 +4,7 @@ import {
   getPaymobConfig,
   processTestCardPayment,
   paymobWebhook,
+  confirmPaymentSession,
   getPaymentById,
 } from "../Controllers/payment.controller.js";
 import { authenticateUser } from "../Middlewares/auth.js";
@@ -27,6 +28,13 @@ router.get("/paymob/config", getPaymobConfig);
 router.post("/create-checkout", authenticateUser, createCheckout);
 
 /**
+ * @route   POST /api/payments/confirm-session
+ * @desc    Confirm and verify payment return from Paymob redirection and immediately credit employer
+ * @access  Protected (Requires valid JWT Bearer token)
+ */
+router.post("/confirm-session", authenticateUser, confirmPaymentSession);
+
+/**
  * @route   POST /api/payments/test-pay
  * @desc    Simulate/process test card payment (4000 0000 0000 0002 or 1111 1111 1111 1111) in Sandbox mode
  * @access  Protected (Requires valid JWT Bearer token)
@@ -42,7 +50,7 @@ router.post("/webhook", paymobWebhook);
 
 /**
  * @route   GET /api/payments/:id
- * @desc    Get payment status and details by payment ID
+ * @desc    Get payment status and details by payment ID or specialReference
  * @access  Protected (Requires valid JWT Bearer token)
  */
 router.get("/:id", authenticateUser, getPaymentById);

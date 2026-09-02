@@ -75,7 +75,7 @@ const runAsyncTests = async () => {
       email: "test@example.com",
       phoneNumber: "+201000000000",
     },
-    specialReference: "ORDER-TEST-001",
+    specialReference: "ORDER-TEST-1788305420909",
   });
 
   assert(intentionResponse && typeof intentionResponse.client_secret === "string", "Creates sandbox intention with client_secret");
@@ -87,7 +87,7 @@ const runAsyncTests = async () => {
   const iframeSession = await createIframePaymentSession({
     amount: 200,
     currency: "EGP",
-    merchantOrderId: "ORDER-IFRAME-001",
+    merchantOrderId: "ORDER-IFRAME-1788305420909",
     iframeId: "789123",
     integrationId: "456789",
   });
