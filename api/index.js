@@ -13,7 +13,11 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://career-hub-website.vercel.app",
+  }),
+);
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -23,9 +27,9 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-  app.get("/", (req, res) => {
+app.get("/", (req, res) => {
   res.json({
-    message: "Job Board API is running"
+    message: "Job Board API is running",
   });
 });
 

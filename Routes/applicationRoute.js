@@ -4,7 +4,8 @@ import {
     getMyApplications,
     getJobApplications,
     updateApplicationStatus,
-    getAllApplications
+    getAllApplications,
+    deleteApplication
 } from "../Controllers/applicationController.js";
 import { authenticateUser, roleMiddleware } from "../Middlewares/auth.js"; // ضفنا الـ roleMiddleware
 
@@ -19,5 +20,7 @@ router.get("/applications/user/:id", authenticateUser, roleMiddleware("job seeke
 router.get("/jobs/:jobId/applications", authenticateUser, roleMiddleware("employer", "admin"), getJobApplications);
 
 router.patch("/applications/:id", authenticateUser, roleMiddleware("employer","admin"), updateApplicationStatus);
+
+router.delete("/applications/:id", authenticateUser,  deleteApplication);
 
 export default router;
