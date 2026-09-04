@@ -1,11 +1,11 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 
 import userRouter from "../Routes/userRoute.js";
 import applicationRoutes from "../Routes/applicationRoute.js";
 import jobRouter from "../Routes/jobRoute.js";
+import connectDB from "../Data/db.js";
 import paymentsRouter from "../Routes/payment.routes.js";
 
 dotenv.config();
@@ -19,13 +19,16 @@ app.use(
   }),
 );
 
-const MONGO_URI = process.env.MONGO_URI;
-
-// Connect to MongoDB
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({
+      message: "Database connection failed",
+    });
+  }
+});
 
 app.get("/", (req, res) => {
   res.json({
